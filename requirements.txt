@@ -3,6 +3,7 @@ langchain-groq
 langchain-huggingface
 langchain-text-splitters
 langchain-community
+langgraph
 chromadb
 torch
 sentence-transformers
