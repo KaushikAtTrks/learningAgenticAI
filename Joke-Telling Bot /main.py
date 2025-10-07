@@ -35,6 +35,9 @@ class JokeState(BaseModel):
     category: str = "neutral"
     language: str = "en"
     quit: bool = False
+    current_joke: str = ""  # Temporary storage for joke being reviewed
+    critic_approved: bool = False
+    revision_count: int = 0  # Track how many times Writer revised
 
 def load_jokes_from_json() -> List[Joke]:
     """Load jokes from JSON file"""
@@ -85,24 +88,100 @@ def get_joke(language: str = "en", category: str = "neutral") -> str:
     except Exception as e:
         return f"Error generating joke: {str(e)}"
 
-def show_menu(state: JokeState) -> dict:
-    user_input = input("[n] Next  [c] Category  [l] Language  [h] History  [q] Quit\n> ").strip().lower()
-    return {"jokes_choice": user_input}
+def writer_agent(state: JokeState) -> dict:
+    """Writer agent that generates jokes"""
+    if state.revision_count > 0:
+        print(f"\n✍️  Writer: Okay, let me try again (Attempt #{state.revision_count + 1})...")
+    else:
+        print("\n✍️  Writer: Crafting a joke for you...")
+    
+    joke_text = get_joke(language=state.language, category=state.category)
+    
+    return {
+        "current_joke": joke_text,
+        "revision_count": state.revision_count + 1,
+        "critic_approved": False
+    }
 
-def route_choice(state: JokeState) -> str:
-    if state.jokes_choice == "n":
-        return "fetch_joke"
-    elif state.jokes_choice == "c":
-        return "update_category"
-    elif state.jokes_choice == "l":
-        return "language_choice"
-    elif state.jokes_choice == "h":
-        return "show_history"
-    elif state.jokes_choice == "q":
-        return "exit_bot"
-    return "exit_bot"
+def critic_agent(state: JokeState) -> dict:
+    """Critic agent that evaluates jokes"""
+    print("\n🎭 Critic: Let me evaluate this joke...")
+    
+    # Build critic prompt
+    critic_prompt = f"""You are a professional comedy critic. Evaluate this joke:
+
+"{state.current_joke}"
+
+Rate it on:
+1. Humor (is it funny?)
+2. Appropriateness (is it clean and suitable for all audiences?)
+3. Structure (does it have good setup and punchline?)
+
+Respond with ONLY one of these:
+- "APPROVED" if the joke is good enough
+- "REJECTED: [brief reason]" if it needs improvement
+
+Be strict but fair. Only approve genuinely funny jokes."""
+    
+    try:
+        response = llm.invoke(critic_prompt)
+        evaluation = response.content.strip()
+        
+        if "APPROVED" in evaluation.upper():
+            print("✅ Critic: This joke passes! It's ready to share.")
+            return {"critic_approved": True}
+        else:
+            print(f"❌ Critic: {evaluation}")
+            print("   Sending back to Writer for revision...")
+            return {"critic_approved": False}
+    except Exception as e:
+        print(f"⚠️  Critic error: {str(e)}. Approving by default.")
+        return {"critic_approved": True}
+
+def route_critic_decision(state: JokeState) -> str:
+    """Route based on critic's decision"""
+    max_attempts = 3
+    
+    if state.critic_approved:
+        return "show_final_joke"
+    elif state.revision_count >= max_attempts:
+        print(f"\n⚠️  Maximum attempts ({max_attempts}) reached. Using current joke anyway.")
+        return "show_final_joke"
+    else:
+        return "writer"
+
+def show_final_joke(state: JokeState) -> dict:
+    """Display the approved joke and save it"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    new_joke = Joke(
+        text=state.current_joke, 
+        category=state.category,
+        language=state.language,
+        timestamp=timestamp
+    )
+    
+    print(f"\n{'='*60}")
+    print(f"✨ APPROVED JOKE ✨")
+    print(f"Category: {state.category} | Language: {state.language}")
+    print(f"Attempts: {state.revision_count}")
+    print(f"{'='*60}")
+    print(f"{state.current_joke}")
+    print(f"{'='*60}\n")
+    
+    # Save to JSON after generating
+    all_jokes = state.jokes + [new_joke]
+    save_jokes_to_json(all_jokes)
+    
+    # Reset state for next joke
+    return {
+        "jokes": [new_joke],
+        "current_joke": "",
+        "revision_count": 0,
+        "critic_approved": False
+    }
 
 def fetch_joke(state: JokeState) -> dict:
+    """Legacy function - kept for compatibility"""
     print("\n🎭 Generating joke...")
     joke_text = get_joke(language=state.language, category=state.category)
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -123,6 +202,23 @@ def fetch_joke(state: JokeState) -> dict:
     save_jokes_to_json(all_jokes)
     
     return {"jokes": [new_joke]}
+
+def show_menu(state: JokeState) -> dict:
+    user_input = input("[n] Next  [c] Category  [l] Language  [h] History  [q] Quit\n> ").strip().lower()
+    return {"jokes_choice": user_input}
+
+def route_choice(state: JokeState) -> str:
+    if state.jokes_choice == "n":
+        return "writer"  # Now routes to Writer instead of fetch_joke
+    elif state.jokes_choice == "c":
+        return "update_category"
+    elif state.jokes_choice == "l":
+        return "language_choice"
+    elif state.jokes_choice == "h":
+        return "show_history"
+    elif state.jokes_choice == "q":
+        return "exit_bot"
+    return "exit_bot"
 
 def update_category(state: JokeState) -> dict:
     categories = ["neutral", "chuck", "all"]
@@ -174,8 +270,11 @@ def show_history(state: JokeState) -> dict:
 def build_joke_graph() -> CompiledStateGraph:
     workflow = StateGraph(JokeState)
 
+    # Add all nodes
     workflow.add_node("show_menu", show_menu)
-    workflow.add_node("fetch_joke", fetch_joke)
+    workflow.add_node("writer", writer_agent)
+    workflow.add_node("critic", critic_agent)
+    workflow.add_node("show_final_joke", show_final_joke)
     workflow.add_node("update_category", update_category)
     workflow.add_node("language_choice", language_choice)
     workflow.add_node("show_history", show_history)
@@ -183,11 +282,12 @@ def build_joke_graph() -> CompiledStateGraph:
 
     workflow.set_entry_point("show_menu")
 
+    # Menu routing
     workflow.add_conditional_edges(
         "show_menu",
         route_choice,
         {
-            "fetch_joke": "fetch_joke",
+            "writer": "writer",
             "update_category": "update_category",
             "language_choice": "language_choice",
             "show_history": "show_history",
@@ -195,7 +295,21 @@ def build_joke_graph() -> CompiledStateGraph:
         }
     )
 
-    workflow.add_edge("fetch_joke", "show_menu")
+    # Writer-Critic workflow
+    workflow.add_edge("writer", "critic")  # Writer sends to Critic
+    
+    # Critic decision routing
+    workflow.add_conditional_edges(
+        "critic",
+        route_critic_decision,
+        {
+            "writer": "writer",  # Rejected: back to Writer
+            "show_final_joke": "show_final_joke",  # Approved: show joke
+        }
+    )
+
+    # After showing joke, return to menu
+    workflow.add_edge("show_final_joke", "show_menu")
     workflow.add_edge("update_category", "show_menu")
     workflow.add_edge("language_choice", "show_menu")
     workflow.add_edge("show_history", "show_menu")
@@ -207,7 +321,8 @@ def main():
     print("="*60)
     print("🎭 Welcome to the AI-Powered Joke-Telling Bot! 🎭")
     print("="*60)
-    print("Powered by LangGraph and ChatGroq LLM\n")
+    print("Powered by LangGraph and ChatGroq LLM")
+    print("✨ Now featuring Writer-Critic AI Collaboration! ✨\n")
     
     # Load previous jokes from JSON
     previous_jokes = load_jokes_from_json()
