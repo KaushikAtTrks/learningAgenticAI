@@ -1,0 +1,12 @@
+Title: Ethical Considerations in Agentic AI
+
+Abstract:
+This paper examines the ethical challenges posed by Agentic AI, including accountability, transparency, and bias. We propose frameworks for responsible development and deployment of agentic systems.
+
+Keywords: Agentic AI, ethics, accountability, transparency, bias
+
+Introduction:
+As Agentic AI systems gain autonomy, ethical concerns become paramount. This paper discusses the risks and responsibilities associated with agentic decision-making and offers guidelines for ethical AI design.
+
+Conclusion:
+Addressing ethical issues in Agentic AI is essential for fostering trust and ensuring positive societal impact.

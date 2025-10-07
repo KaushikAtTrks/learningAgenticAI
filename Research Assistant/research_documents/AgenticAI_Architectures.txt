@@ -1,0 +1,12 @@
+Title: Agentic AI Architectures and Algorithms
+
+Abstract:
+This paper provides an overview of architectures and algorithms used in Agentic AI, including reinforcement learning, multi-agent systems, and hierarchical planning. We highlight recent advances and future research directions.
+
+Keywords: Agentic AI, architectures, algorithms, reinforcement learning, multi-agent systems
+
+Introduction:
+Agentic AI relies on sophisticated architectures and algorithms to achieve autonomy and adaptability. This paper reviews key technical approaches and their applications in agentic systems.
+
+Conclusion:
+Innovative architectures and algorithms are driving the evolution of Agentic AI, enabling more capable and intelligent agents.

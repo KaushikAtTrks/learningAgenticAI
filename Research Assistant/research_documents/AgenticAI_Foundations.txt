@@ -1,0 +1,12 @@
+Title: Foundations of Agentic AI
+
+Abstract:
+This paper explores the foundational principles of Agentic AI, focusing on autonomous decision-making, goal-driven behavior, and adaptive learning. We discuss the theoretical underpinnings and the evolution of agentic systems in artificial intelligence.
+
+Keywords: Agentic AI, autonomy, decision-making, adaptive learning
+
+Introduction:
+Agentic AI refers to artificial intelligence systems capable of independent action, pursuing goals, and adapting to changing environments. This paper reviews the core concepts and historical development of agentic models.
+
+Conclusion:
+Understanding the foundations of Agentic AI is crucial for building robust, flexible, and ethical autonomous systems.

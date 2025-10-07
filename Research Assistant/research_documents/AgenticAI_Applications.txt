@@ -1,0 +1,12 @@
+Title: Applications of Agentic AI in Real-World Systems
+
+Abstract:
+This paper reviews practical applications of Agentic AI, including robotics, virtual assistants, and autonomous vehicles. We analyze how agentic principles enhance system performance and user experience.
+
+Keywords: Agentic AI, robotics, virtual assistants, autonomous vehicles
+
+Introduction:
+Agentic AI systems are increasingly deployed in real-world scenarios, demonstrating improved autonomy and adaptability. This paper surveys key applications and their impact on technology and society.
+
+Conclusion:
+Agentic AI is transforming industries by enabling intelligent, self-directed systems that interact seamlessly with humans and environments.

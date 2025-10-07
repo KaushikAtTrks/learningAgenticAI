@@ -1,0 +1,12 @@
+Title: Future Trends in Agentic AI Research
+
+Abstract:
+This paper explores emerging trends in Agentic AI, such as explainable agents, human-agent collaboration, and scalable agentic systems. We discuss open challenges and opportunities for future research.
+
+Keywords: Agentic AI, future trends, explainable AI, human-agent collaboration, scalability
+
+Introduction:
+Agentic AI is rapidly evolving, with new research directions focusing on transparency, collaboration, and scalability. This paper identifies promising areas for innovation and growth in agentic technologies.
+
+Conclusion:
+Future research in Agentic AI will shape the next generation of intelligent systems, emphasizing explainability, collaboration, and large-scale deployment.
